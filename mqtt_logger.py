@@ -1,11 +1,11 @@
 import paho.mqtt.client as mqtt
 import sqlite3
 import time
-import os
 import json
 from threading import Lock
 
 from config import MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASS, require_mqtt
+import db
 import derived
 from alerts import evaluate_alerts
 
@@ -17,8 +17,7 @@ MQTT_SUBSCRIBE_TOPIC = "#"
 ALERT_TOPIC_PREFIX = "pi_hub/alerts"
 SAVE_INTERVAL = 15  # seconds between database snapshots
 
-DATABASE = 'weather_data.db'
-db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), DATABASE)
+db_path = db.DB_PATH
 
 # Maps a topic segment to a standard column name. For ESPHome `/state` topics
 # the key is the second-to-last segment; otherwise the last segment.
@@ -143,6 +142,7 @@ def save_state_to_database(client=None):
 # --- Main Program ---
 if __name__ == "__main__":
     require_mqtt()
+    db.ensure_schema()  # create the table if this is a fresh database
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     client.username_pw_set(MQTT_USER, MQTT_PASS)
     client.on_connect = on_connect

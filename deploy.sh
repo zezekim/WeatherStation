@@ -79,12 +79,12 @@ fi
 ./venv/bin/pip install -q -r requirements.txt
 echo "   dependencies satisfied"
 
-# Initialize the database only if it doesn't exist yet. init_db.py DROPS the
-# table, so this guard makes sure we never wipe existing data.
-if [ ! -f weather_data.db ]; then
-    warn "No database found — creating a fresh one."
-    ./venv/bin/python init_db.py
-fi
+# Ensure the table exists (non-destructive: CREATE TABLE IF NOT EXISTS). Safe
+# whether the DB is the real one with data, a fresh install, or an empty
+# phantom file — it never drops data.
+say "Ensuring database schema"
+./venv/bin/python -c "import db; db.ensure_schema()"
+echo "   schema ready at $(./venv/bin/python -c 'import db; print(db.DB_PATH)')"
 
 # --- 4. .env check -----------------------------------------------------------
 ENV_OK=1

@@ -3,11 +3,11 @@ import time
 from flask import Flask, jsonify, render_template, request
 
 import config
+import db
 import derived
 from alerts import evaluate_alerts
 
 app = Flask(__name__)
-DATABASE = 'weather_data.db'
 
 # Metrics that can be charted / summarised. Whitelisted before being
 # interpolated into SQL, so this list is the trust boundary — keep it in sync
@@ -22,9 +22,14 @@ STALE_AFTER = 60
 
 
 def get_db():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+    """Read-only connection, or None if the database/table isn't ready yet
+    (fresh install before the logger has created it). Returning None instead
+    of raising keeps the dashboard responsive with an 'awaiting data' state
+    rather than crash-looping with 500s."""
+    try:
+        return db.connect_ro()
+    except sqlite3.OperationalError:
+        return None
 
 
 def get_weather_outlook(data):
@@ -68,13 +73,19 @@ def index():
 @app.route('/data')
 def get_data():
     conn = get_db()
-    latest = conn.execute(
-        "SELECT * FROM weather_readings ORDER BY timestamp DESC LIMIT 1"
-    ).fetchone()
+    if conn is None:
+        return jsonify({"error": "No data available"}), 200
+    try:
+        latest = conn.execute(
+            "SELECT * FROM weather_readings ORDER BY timestamp DESC LIMIT 1"
+        ).fetchone()
+    except sqlite3.OperationalError:
+        conn.close()
+        return jsonify({"error": "No data available"}), 200
 
     if not latest:
         conn.close()
-        return jsonify({"error": "No data available"}), 404
+        return jsonify({"error": "No data available"}), 200
 
     data = dict(latest)
     now = int(time.time())
@@ -124,23 +135,29 @@ def get_history(data_type):
     bucket = max(1, window // points)      # seconds per aggregation bucket
 
     conn = get_db()
-    # Average each bucket into one point: far fewer rows to the browser, and
-    # a smoother line. min/max come along for an optional shaded band.
-    rows = conn.execute(
-        f"""
-        SELECT
-            CAST(AVG(timestamp) AS INTEGER) AS ts,
-            AVG({data_type})  AS avg_v,
-            MIN({data_type})  AS min_v,
-            MAX({data_type})  AS max_v
-        FROM weather_readings
-        WHERE {data_type} IS NOT NULL AND timestamp > ? AND timestamp <= ?
-        GROUP BY CAST(timestamp AS INTEGER) / ?
-        ORDER BY ts ASC
-        """,
-        (start, now, bucket),
-    ).fetchall()
-    conn.close()
+    rows = []
+    if conn is not None:
+        try:
+            # Average each bucket into one point: far fewer rows to the browser,
+            # and a smoother line. min/max come along for a shaded band.
+            rows = conn.execute(
+                f"""
+                SELECT
+                    CAST(AVG(timestamp) AS INTEGER) AS ts,
+                    AVG({data_type})  AS avg_v,
+                    MIN({data_type})  AS min_v,
+                    MAX({data_type})  AS max_v
+                FROM weather_readings
+                WHERE {data_type} IS NOT NULL AND timestamp > ? AND timestamp <= ?
+                GROUP BY CAST(timestamp AS INTEGER) / ?
+                ORDER BY ts ASC
+                """,
+                (start, now, bucket),
+            ).fetchall()
+        except sqlite3.OperationalError:
+            rows = []
+        finally:
+            conn.close()
 
     return jsonify({
         'metric': data_type,
@@ -162,11 +179,20 @@ def get_summary():
         for m in VALID_METRICS
     )
     conn = get_db()
-    row = conn.execute(
-        f"SELECT COUNT(*) AS n, {agg} FROM weather_readings WHERE timestamp >= ?",
-        (midnight,),
-    ).fetchone()
-    conn.close()
+    row = None
+    if conn is not None:
+        try:
+            row = conn.execute(
+                f"SELECT COUNT(*) AS n, {agg} FROM weather_readings WHERE timestamp >= ?",
+                (midnight,),
+            ).fetchone()
+        except sqlite3.OperationalError:
+            row = None
+        finally:
+            conn.close()
+
+    if row is None:
+        return jsonify({'since': midnight, 'samples': 0})
 
     summary = {'since': midnight, 'samples': row['n']}
     for m in VALID_METRICS:
