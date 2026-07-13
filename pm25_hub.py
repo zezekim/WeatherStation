@@ -3,7 +3,7 @@ import serial
 import paho.mqtt.client as mqtt
 from adafruit_pm25.uart import PM25_UART
 
-from config import MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASS
+from config import MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASS, require_mqtt
 
 # --- Configuration ---
 MQTT_TOPIC_PREFIX = "pi_hub"
@@ -14,6 +14,7 @@ FETCH_INTERVAL = 5
 STARTUP_DELAY = 15 # Still a good idea to wait for the system to be ready
 
 def main():
+    require_mqtt()
     print(f"PM2.5 Hub: Script started. Waiting {STARTUP_DELAY} seconds...")
     time.sleep(STARTUP_DELAY)
 

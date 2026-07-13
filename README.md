@@ -1,6 +1,6 @@
 # WeatherStation
 
-A Raspberry Pi–based environmental monitoring station (JAGASA Environmental Station) that collects weather and air-quality data from a mix of Modbus, UART, and ESPHome sensors, aggregates it over MQTT, logs it to SQLite, and serves a live web dashboard with 72-hour history charts.
+A Raspberry Pi–based environmental monitoring station (JAGASA Environmental Station) that collects weather and air-quality data from a mix of Modbus, UART, and ESPHome sensors, aggregates it over MQTT, logs it to SQLite, and serves a live professional dashboard with derived metrics, air-quality index, threshold alerts, and history charts.
 
 ## How it works
 
@@ -18,57 +18,101 @@ A Raspberry Pi–based environmental monitoring station (JAGASA Environmental St
                         │  subscribe (#)
                         ▼
               mqtt_logger.py ──► weather_data.db (SQLite)
-                                          │
-                                          ▼
-                             w.py (Flask) ──► Web dashboard
+                 │ (alerts)                │
+                 ▼                         ▼
+          pi_hub/alerts/*       w.py (Flask) ──► Dashboard
 ```
 
-- **`modbus_hub.py`** — Polls RS-485 Modbus wind speed and wind direction sensors every 2 seconds and publishes readings to MQTT under the `pi_hub/` topic prefix. Automatically reconnects on serial/Modbus errors.
-- **`pm25_hub.py`** — Reads a PMS-family particulate sensor over UART (PM1.0 / PM2.5 / PM10) every 5 seconds and publishes to MQTT.
-- **`mqtt_logger.py`** — Subscribes to all MQTT topics, translates sensor topic names (including ESPHome-sanitized names) into a standard schema, keeps the latest value of every metric in memory, and snapshots the full state into SQLite every 15 seconds.
-- **`w.py`** — Flask web app. Serves the dashboard (`templates/index.html`) and two JSON endpoints:
-  - `GET /data` — latest reading, enriched with a cardinal wind direction (N/NNE/…) and a simple pressure/humidity/wind-based weather outlook.
-  - `GET /history/<data_type>` — the last 72 hours of a single metric for charting.
+- **`modbus_hub.py`** — Polls RS-485 Modbus wind speed and direction sensors every 2 s and publishes to MQTT under `pi_hub/`. Auto-reconnects on serial/Modbus errors.
+- **`pm25_hub.py`** — Reads a PMS particulate sensor over UART (PM1.0 / PM2.5 / PM10) every 5 s and publishes to MQTT.
+- **`mqtt_logger.py`** — Subscribes to all topics, normalizes sensor names to a standard schema, snapshots the full state into SQLite every 15 s, and publishes threshold alerts to `pi_hub/alerts/<metric>`.
+- **`w.py`** — Flask app and JSON API behind the dashboard.
+- **`rollup.py`** — Retention job that compacts old raw rows into hourly averages.
 
-## Metrics collected
+## Derived metrics & indices
 
-| Category | Metrics |
+Computed on the fly by `derived.py` from the raw sensor columns (no extra storage):
+
+| Output | From | Notes |
+|---|---|---|
+| Feels-like / heat index | temperature + humidity | NOAA Rothfusz regression |
+| Dew point | temperature + humidity | Magnus-Tetens |
+| Air Quality Index | PM2.5 + PM10 | US EPA breakpoints, worst-of, with category & color |
+| UV category | UV index | WHO bands (Low → Extreme) |
+| Wind description | wind speed | Beaufort scale |
+| Cardinal direction | wind direction | 16-point compass |
+| Pressure trend | pressure now vs ~3 h ago | rising / falling / steady |
+
+## Alerts
+
+`alerts.py` evaluates configurable thresholds (heat index, PM2.5/PM10, UV, wind, pressure — see `config.py`) against the latest reading. Alerts are surfaced on the dashboard and published to MQTT (`pi_hub/alerts/<metric>`, retained, only on state change) by the logger.
+
+## HTTP API
+
+| Endpoint | Returns |
 |---|---|
-| Weather | temperature, humidity, pressure, wind speed, wind direction |
-| Light | ambient light (lux), UV index |
-| Air quality | PM1.0, PM2.5, PM10, VOC index |
+| `GET /data` | Latest reading + all derived fields + `age_seconds`/`is_stale` + active alerts |
+| `GET /history/<metric>?hours=&points=` | Downsampled series (bucketed averages + min/max band). `hours` ≤ 720, `points` ≤ 1000 |
+| `GET /summary` | Per-metric min/max/avg since local midnight |
+
+`<metric>` is whitelisted against the table columns before use.
+
+## Dashboard
+
+`templates/index.html` is a single self-contained page (Chart.js + a Windy embed, no build step):
+
+- Hero cards: current conditions with feels-like & dew point, a color-coded **AQI badge**, and a live **wind compass**.
+- Metric tiles with today's high/low, UV category chip, and a pressure-trend arrow.
+- Threshold **alert banner**.
+- **Connection status** pill (Live / Stale / Offline) driven by reading age.
+- History charts with a **time-range selector** (24 h → 30 d) and shaded min/max bands.
+- Light/dark theme.
 
 ## Setup
 
-Requires Python 3.11+, an MQTT broker (e.g. Mosquitto), and the sensor hardware above. Serial devices are expected at stable udev-mapped paths (`/dev/wind_speed`, `/dev/wind_direction`, `/dev/pm25_sensor`).
+Requires Python 3.11+, an MQTT broker (e.g. Mosquitto), and the sensor hardware. Serial devices are expected at stable udev paths (`/dev/wind_speed`, `/dev/wind_direction`, `/dev/pm25_sensor`).
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install flask paho-mqtt pymodbus pyserial adafruit-circuitpython-pm25 gunicorn
 
-# Create the database (WARNING: drops any existing weather_readings table)
-python init_db.py
-
-# Configure MQTT broker address and credentials
-cp .env.example .env   # then edit .env
+python init_db.py          # create the DB (WARNING: drops weather_readings)
+cp .env.example .env        # then edit: broker, credentials, station lat/lon
 ```
 
-All scripts read MQTT settings from `.env` (via `config.py`, no extra dependency). Real environment variables take precedence over `.env` values. Never commit `.env`.
+All scripts read settings from `.env` via `config.py` (stdlib only — no python-dotenv needed). Real environment variables override `.env`. Never commit `.env`.
 
 ## Running
 
-Each component runs as its own long-lived process (typically as systemd services on the Pi):
+Each component runs as its own long-lived process (typically systemd services on the Pi):
 
 ```bash
 python modbus_hub.py     # wind sensors → MQTT
 python pm25_hub.py       # particulate sensor → MQTT
-python mqtt_logger.py    # MQTT → SQLite
-python w.py              # or: gunicorn w:app — web dashboard
+python mqtt_logger.py    # MQTT → SQLite (+ alerts)
+python w.py              # or: gunicorn w:app — dashboard on :5000
 ```
 
-`check_db.py` prints the 20 most recent database rows for a quick health check.
+`check_db.py` prints recent rows plus row count, time span, and staleness.
+
+### Retention (cron)
+
+Raw rows accumulate at ~5,800/day. Compact rows older than `RETENTION_DAYS` (default 30) into hourly averages:
+
+```bash
+python rollup.py --dry-run     # preview
+python rollup.py --vacuum      # compact + reclaim disk
+```
+
+Nightly example:
+
+```cron
+15 3 * * *  cd /home/pi/weather && venv/bin/python rollup.py --vacuum
+```
+
+Rollup is idempotent (only hours with >1 row are touched) and transactional. On a 386-day, 1.29 M-row test database it reduced the file from ~99 MB to ~4 MB.
 
 ## Database
 
-Single SQLite table `weather_readings` (see `schema.sql`): one row per 15-second snapshot with a Unix `timestamp` and one nullable column per metric, indexed on `timestamp`.
+Single SQLite table `weather_readings` (see `schema.sql`): one row per snapshot with a Unix `timestamp` and one nullable column per raw metric, indexed on `timestamp`.

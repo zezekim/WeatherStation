@@ -3,289 +3,595 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JAGASA Environmental Station</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    <title>{{ station_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- COLOR PALETTE USING CSS VARIABLES --- */
         :root {
-            --body-bg: #f4f6f8;
-            --text-color: #37474f;
-            --card-bg: #fff;
-            --item-bg: #e3f2fd;
-            --item-border: #bbdefb;
-            --header-color: #1976d2;
-            --subheader-color: #2196f3;
-            --chart-bg: #fbfdff;
-            --chart-border: #e0e0e0;
-            --chart-grid-color: rgba(0, 0, 0, 0.1);
-            --chart-ticks-color: #666;
+            --bg: #eef2f7;
+            --bg-grad-1: #dbe7f3;
+            --bg-grad-2: #eef2f7;
+            --card: #ffffff;
+            --card-2: #f7f9fc;
+            --text: #1f2d3d;
+            --text-dim: #64748b;
+            --line: #e2e8f0;
+            --accent: #2563eb;
+            --shadow: 0 6px 20px rgba(30, 50, 90, 0.08);
+            --shadow-lg: 0 12px 34px rgba(30, 50, 90, 0.13);
+            --radius: 18px;
+            --hero-grad-1: #2b6fd6;
+            --hero-grad-2: #56a0e8;
+            --hero-text: #ffffff;
+        }
+        body.dark {
+            --bg: #0d1420;
+            --bg-grad-1: #131d2e;
+            --bg-grad-2: #0d1420;
+            --card: #182234;
+            --card-2: #1e293b;
+            --text: #e6edf6;
+            --text-dim: #8ba0bd;
+            --line: #29384f;
+            --accent: #5b9bff;
+            --shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+            --shadow-lg: 0 12px 34px rgba(0, 0, 0, 0.45);
+            --hero-grad-1: #1c3f77;
+            --hero-grad-2: #2a5da3;
+            --hero-text: #eaf2ff;
         }
 
-        body.dark-mode {
-            --body-bg: #121212;
-            --text-color: #e0e0e0;
-            --card-bg: #1e1e1e;
-            --item-bg: #2a3a4a;
-            --item-border: #4a6572;
-            --header-color: #90caf9;
-            --subheader-color: #64b5f6;
-            --chart-bg: #212121;
-            --chart-border: #424242;
-            --chart-grid-color: rgba(255, 255, 255, 0.1);
-            --chart-ticks-color: #bbb;
-        }
-
-        /* --- General Styles --- */
-        body { 
-            font-family: 'Roboto', sans-serif; 
-            background-color: var(--body-bg); 
-            color: var(--text-color); 
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             margin: 0;
-            padding: 0;
-            transition: background-color 0.3s, color 0.3s;
+            background: linear-gradient(160deg, var(--bg-grad-1), var(--bg-grad-2) 55%);
+            background-attachment: fixed;
+            color: var(--text);
+            transition: background 0.4s, color 0.4s;
+            -webkit-font-smoothing: antialiased;
         }
-        .page-container {
-            padding: 20px;
-        }
-        .main-title {
-            text-align: center;
-            color: var(--header-color);
-            margin-bottom: 20px;
-        }
+        .wrap { max-width: 1400px; margin: 0 auto; padding: 18px 22px 60px; }
 
-        /* --- Main Layout Grid --- */
-        .main-layout {
-            display: grid;
-            grid-template-columns: 3fr 2fr; /* Ratio for left/right columns */
-            gap: 20px;
-            margin: 0 auto;
-            padding: 0 20px; /* Add some padding to the sides */
+        /* --- Top bar --- */
+        .topbar {
+            display: flex; align-items: center; gap: 16px;
+            flex-wrap: wrap; margin-bottom: 22px;
         }
-
-        .left-panel, .right-panel {
-            background-color: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand .logo {
+            width: 42px; height: 42px; border-radius: 12px;
+            background: linear-gradient(135deg, var(--hero-grad-1), var(--hero-grad-2));
+            display: grid; place-items: center; font-size: 22px;
+            box-shadow: var(--shadow);
         }
+        .brand h1 { font-size: 1.2rem; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+        .brand .sub { font-size: 0.78rem; color: var(--text-dim); font-weight: 500; }
+        .topbar .spacer { flex: 1; }
+        .clock { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.95rem; color: var(--text-dim); }
 
-        .left-panel iframe {
-            width: 100%;
-            height: 88vh; /* Taller map */
-            border: 1px solid var(--chart-border);
-            border-radius: 8px;
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 7px 13px; border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+            background: var(--card); box-shadow: var(--shadow); border: 1px solid var(--line);
         }
+        .status-dot { width: 9px; height: 9px; border-radius: 50%; background: #94a3b8; }
+        .status-pill.live   .status-dot { background: #16a34a; box-shadow: 0 0 0 0 rgba(22,163,74,.5); animation: pulse 2s infinite; }
+        .status-pill.stale  .status-dot { background: #f59e0b; }
+        .status-pill.offline .status-dot { background: #dc2626; }
+        @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)} 70%{box-shadow:0 0 0 7px rgba(22,163,74,0)} 100%{box-shadow:0 0 0 0 rgba(22,163,74,0)} }
 
-        /* --- Responsive Stacking for smaller screens --- */
-        @media (max-width: 1200px) {
-            .main-layout {
-                grid-template-columns: 1fr; /* Stack into a single column */
-            }
-            .left-panel iframe {
-                height: 60vh;
-            }
+        .theme-btn {
+            width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line);
+            background: var(--card); color: var(--text); cursor: pointer; font-size: 18px;
+            box-shadow: var(--shadow); transition: transform .15s;
         }
+        .theme-btn:hover { transform: translateY(-2px); }
 
-        /* --- Right Panel Component Styles --- */
-        h2, h3 { text-align: center; margin-top: 0; }
-        h2 { color: var(--subheader-color); }
-        h3 { font-size: 1em; color: var(--text-color); }
-
-        .forecast-widget {
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid var(--chart-border);
-            background-color: var(--chart-bg);
+        /* --- Alert banner --- */
+        #alerts { display: none; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .alert {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+            border-radius: 14px; font-weight: 500; font-size: 0.9rem;
+            border-left: 4px solid; box-shadow: var(--shadow);
         }
-        .forecast-widget iframe {
-            width: 100%;
-            max-width: 650px;
-            height: 187px;
-            border: none;
+        .alert.warning { background: #fff7e6; border-color: #f59e0b; color: #92600a; }
+        .alert.danger  { background: #fdeaea; border-color: #dc2626; color: #9b1c1c; }
+        body.dark .alert.warning { background: #33280d; color: #f6cf7a; }
+        body.dark .alert.danger  { background: #3a1618; color: #f4a1a1; }
+        .alert .ico { font-size: 1.1rem; }
+
+        /* --- Grid scaffolding --- */
+        .hero { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+        .card {
+            background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+            border: 1px solid var(--line); padding: 20px; transition: transform .18s, box-shadow .18s;
         }
+        .card-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); font-weight: 700; margin-bottom: 14px; }
 
-        .data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
-        .data-item { background-color: var(--item-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--item-border); text-align: left; }
-        .outlook-item { background-color: #e8f5e9; border-color: #c8e6c9; text-align: center; color: #388e3c; padding: 10px 15px; /* Made more compact */ font-size: 1em; }
-        body.dark-mode .outlook-item { background-color: #2e3c30; border-color: #4a6572; color: #a5d6a7; }
-        .label { font-weight: 500; color: var(--header-color); font-size: 0.9em; display: block; margin-bottom: 5px; }
-        .value { font-size: 1.6em; color: var(--text-color); font-weight: 700; }
-        .unit { font-size: 0.9em; color: #78909c; font-weight: 400; margin-left: 4px; }
-        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .chart-item { background-color: var(--chart-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--chart-border); }
-        .timestamp { font-size: 0.9em; color: #90a4ae; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--chart-border); text-align: center; }
+        /* Hero: NOW */
+        .now-card { background: linear-gradient(150deg, var(--hero-grad-1), var(--hero-grad-2)); color: var(--hero-text); border: none; }
+        .now-card .card-title { color: rgba(255,255,255,.8); }
+        .now-top { display: flex; align-items: flex-start; justify-content: space-between; }
+        .now-temp { font-size: 3.6rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+        .now-temp .deg { font-size: 1.6rem; font-weight: 600; vertical-align: super; opacity: .85; }
+        .now-icon { font-size: 3.2rem; line-height: 1; }
+        .now-feels { font-size: 0.95rem; opacity: .9; margin-top: 8px; font-weight: 500; }
+        .now-outlook { margin-top: 16px; font-size: 0.9rem; line-height: 1.4; opacity: .95;
+            background: rgba(255,255,255,.14); padding: 10px 13px; border-radius: 12px; }
+        .now-hilo { display: flex; gap: 18px; margin-top: 14px; font-size: 0.85rem; font-weight: 600; }
+        .now-hilo .up { color: #ffd7b0; } .now-hilo .dn { color: #bfe3ff; }
 
-        /* --- Theme Toggle Switch --- */
-        .theme-switch-wrapper { display: flex; align-items: center; position: fixed; top: 15px; right: 20px; z-index: 10; }
-        .theme-switch { position: relative; display: inline-block; width: 50px; height: 25px; }
-        .theme-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 25px; }
-        .slider:before { position: absolute; content: ""; height: 19px; width: 19px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #2196F3; }
-        input:checked + .slider:before { transform: translateX(25px); }
-        .slider:after { content: '☀️'; position: absolute; top: 50%; left: 5px; transform: translateY(-50%); font-size: 12px; }
-        input:checked + .slider:after { content: '🌙'; left: auto; right: 5px; }
+        /* Hero: AQI */
+        .aqi-card { display: flex; flex-direction: column; }
+        .aqi-badge {
+            border-radius: 14px; padding: 16px; color: #fff; text-align: center;
+            display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 4px;
+        }
+        .aqi-num { font-size: 2.8rem; font-weight: 800; line-height: 1; }
+        .aqi-cat { font-size: 0.86rem; font-weight: 600; }
+        .aqi-dom { font-size: 0.74rem; opacity: .9; margin-top: 2px; }
+        .aqi-pm { display: flex; justify-content: space-around; margin-top: 14px; text-align: center; }
+        .aqi-pm div .v { font-size: 1.15rem; font-weight: 700; }
+        .aqi-pm div .l { font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; }
+
+        /* Hero: WIND compass */
+        .wind-card { display: flex; flex-direction: column; align-items: center; }
+        .compass { position: relative; width: 130px; height: 130px; margin: 4px 0 8px; }
+        .compass svg { width: 100%; height: 100%; }
+        .compass .cardinal { fill: var(--text-dim); font-size: 11px; font-weight: 700; }
+        .compass .needle { transition: transform .6s cubic-bezier(.2,.8,.2,1); transform-origin: 65px 65px; }
+        .wind-read { text-align: center; }
+        .wind-read .spd { font-size: 1.5rem; font-weight: 800; }
+        .wind-read .dir { font-size: 0.82rem; color: var(--text-dim); font-weight: 600; }
+        .wind-read .bft { font-size: 0.74rem; color: var(--text-dim); margin-top: 2px; }
+
+        /* Metrics strip */
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 16px; margin-bottom: 22px; }
+        .metric { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+            border: 1px solid var(--line); padding: 16px 18px; transition: transform .18s, box-shadow .18s; }
+        .metric:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+        .metric .head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .metric .head .ico { font-size: 1.05rem; }
+        .metric .head .name { font-size: 0.74rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); font-weight: 700; }
+        .metric .val { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; }
+        .metric .val .u { font-size: 0.85rem; font-weight: 600; color: var(--text-dim); margin-left: 3px; }
+        .metric .foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 0.74rem; color: var(--text-dim); font-weight: 500; min-height: 16px; }
+        .chip { padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; color: #fff; }
+        .trend { font-weight: 700; }
+        .trend.rising { color: #dc2626; } .trend.falling { color: #2563eb; } .trend.steady { color: var(--text-dim); }
+        .hilo { font-variant-numeric: tabular-nums; }
+        .hilo .up { color: #e8863b; font-weight: 700; } .hilo .dn { color: #3b82c4; font-weight: 700; }
+
+        /* Charts */
+        .section-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 8px 2px 16px; }
+        .section-head h2 { font-size: 1.05rem; font-weight: 700; margin: 0; }
+        .ranges { display: inline-flex; background: var(--card); border-radius: 999px; padding: 4px; box-shadow: var(--shadow); border: 1px solid var(--line); }
+        .ranges button { border: none; background: none; color: var(--text-dim); font-weight: 600; font-size: 0.8rem;
+            padding: 6px 14px; border-radius: 999px; cursor: pointer; transition: all .15s; font-family: inherit; }
+        .ranges button.active { background: var(--accent); color: #fff; }
+        .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-bottom: 24px; }
+        .chart-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--line); padding: 16px 18px; }
+        .chart-card h3 { font-size: 0.82rem; font-weight: 700; margin: 0 0 4px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; }
+        .chart-card .cur { font-size: 1.3rem; font-weight: 800; margin-bottom: 8px; }
+        .chart-box { position: relative; height: 150px; }
+
+        /* Map + forecast */
+        .geo { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; margin-bottom: 20px; }
+        .geo iframe { width: 100%; border: none; border-radius: 12px; display: block; }
+        .map-frame { height: 460px; }
+        .fc-frame { height: 220px; }
+        .geo .card { padding: 14px; }
+
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8rem; padding-top: 10px; border-top: 1px solid var(--line); }
+
+        @media (max-width: 1050px) {
+            .hero { grid-template-columns: 1fr 1fr; }
+            .now-card { grid-column: 1 / -1; }
+            .geo { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 620px) {
+            .hero { grid-template-columns: 1fr; }
+            .wrap { padding: 14px 14px 40px; }
+            .now-temp { font-size: 3rem; }
+        }
     </style>
 </head>
 <body>
-    <div class="theme-switch-wrapper">
-        <label class="theme-switch" for="theme-checkbox">
-            <input type="checkbox" id="theme-checkbox" />
-            <div class="slider round"></div>
-        </label>
+<div class="wrap">
+    <!-- Top bar -->
+    <div class="topbar">
+        <div class="brand">
+            <div class="logo">🌤️</div>
+            <div>
+                <h1>{{ station_name }}</h1>
+                <div class="sub">Live environmental monitoring</div>
+            </div>
+        </div>
+        <div class="spacer"></div>
+        <div class="clock" id="clock">--:--:--</div>
+        <div class="status-pill offline" id="status">
+            <span class="status-dot"></span><span id="status-text">Connecting…</span>
+        </div>
+        <button class="theme-btn" id="theme-btn" title="Toggle theme">🌙</button>
     </div>
 
-    <div class="page-container">
-        <h1 class="main-title">JAGASA Environmental Station</h1>
-        <div class="main-layout">
-            <div class="left-panel">
-                <iframe src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=°C&metricWind=km/h&zoom=5&overlay=wind&product=ecmwf&level=surface&lat=12.383&lon=126.958&pressure=true&message=true" frameborder="0"></iframe>
+    <!-- Alerts -->
+    <div id="alerts"></div>
+
+    <!-- Hero -->
+    <div class="hero">
+        <div class="card now-card">
+            <div class="card-title">Current Conditions</div>
+            <div class="now-top">
+                <div>
+                    <div class="now-temp"><span id="temperature">--</span><span class="deg">°C</span></div>
+                    <div class="now-feels">Feels like <b id="feels_like">--</b>°C · Dew point <b id="dew_point">--</b>°C</div>
+                </div>
+                <div class="now-icon" id="cond-icon">🌡️</div>
             </div>
-            <div class="right-panel">
-                <div class="forecast-widget">
-                    <iframe src="https://embed.windy.com/embed.html?type=forecast&location=coordinates&detail=true&detailLat=14.59&detailLon=121.16&metricTemp=°C&metricRain=mm&metricWind=km/h" frameborder="0"></iframe>
-                </div>
-                <div class="data-item outlook-item">
-                    <span class="label">Weather Outlook</span>
-                    <div><span class="value" id="weather_outlook">--</span></div>
-                </div>
-                <h2>Current Conditions</h2>
-                <div class="data-grid">
-                    <div class="data-item"> <span class="label">Temperature</span> <div><span class="value" id="temperature">--</span><span class="unit">°C</span></div> </div>
-                    <div class="data-item"> <span class="label">Humidity</span> <div><span class="value" id="humidity">--</span><span class="unit">%</span></div> </div>
-                    <div class="data-item"> <span class="label">Pressure</span> <div><span class="value" id="pressure">--</span><span class="unit">hPa</span></div> </div>
-                    <div class="data-item"> <span class="label">Wind Speed</span> <div><span class="value" id="wind_speed">--</span><span class="unit">m/s</span></div> </div>
-                    <div class="data-item"> <span class="label">Wind Direction</span> <div><span class="value" id="wind_direction_cardinal">--</span> (<span class="value" id="wind_direction">--</span><span class="unit">°</span>)</div> </div>
-                    <div class="data-item"> <span class="label">UV Index</span> <div><span class="value" id="uv_index">--</span></div> </div>
-                    <div class="data-item"> <span class="label">Ambient Light</span> <div><span class="value" id="lux">--</span><span class="unit">lux</span></div> </div>
-                    <div class="data-item"> <span class="label">VOC Index</span> <div><span class="value" id="voc_index">--</span></div> </div>
-                    <div class="data-item"> <span class="label">PM2.5</span> <div><span class="value" id="pm2_5">--</span><span class="unit">µg/m³</span></div> </div>
-                </div>
-                <h2>Historical Data</h2>
-                <div class="chart-grid">
-                    <div class="chart-item"><h3>Temperature</h3><canvas id="temperatureChart"></canvas></div>
-                    <div class="chart-item"><h3>Humidity</h3><canvas id="humidityChart"></canvas></div>
-                    <div class="chart-item"><h3>Pressure</h3><canvas id="pressureChart"></canvas></div>
-                    <div class="chart-item"><h3>PM2.5</h3><canvas id="pm2_5Chart"></canvas></div>
-                    <div class="chart-item"><h3>Wind Speed</h3><canvas id="windSpeedChart"></canvas></div>
-                    <div class="chart-item"><h3>UV Index</h3><canvas id="uv_indexChart"></canvas></div>
-                    <div class="chart-item"><h3>Ambient Light</h3><canvas id="luxChart"></canvas></div>
-                    <div class="chart-item"><h3>VOC Index</h3><canvas id="voc_indexChart"></canvas></div>
-                </div>
-                <div class="timestamp">Last Updated: <span id="timestamp">--</span></div>
+            <div class="now-outlook" id="weather_outlook">Awaiting data…</div>
+            <div class="now-hilo">
+                <span class="up">↑ High <span id="temp-hi">--</span>°</span>
+                <span class="dn">↓ Low <span id="temp-lo">--</span>°</span>
+                <span style="color:rgba(255,255,255,.75)">Ø <span id="temp-avg">--</span>°</span>
+            </div>
+        </div>
+
+        <div class="card aqi-card">
+            <div class="card-title">Air Quality Index</div>
+            <div class="aqi-badge" id="aqi-badge" style="background:#94a3b8">
+                <div class="aqi-num" id="aqi">--</div>
+                <div class="aqi-cat" id="aqi_category">Unknown</div>
+                <div class="aqi-dom">Dominant: <span id="aqi_dominant">--</span></div>
+            </div>
+            <div class="aqi-pm">
+                <div><div class="v" id="pm1_0">--</div><div class="l">PM1.0</div></div>
+                <div><div class="v" id="pm2_5">--</div><div class="l">PM2.5</div></div>
+                <div><div class="v" id="pm10_0">--</div><div class="l">PM10</div></div>
+            </div>
+        </div>
+
+        <div class="card wind-card">
+            <div class="card-title" style="align-self:flex-start">Wind</div>
+            <div class="compass">
+                <svg viewBox="0 0 130 130">
+                    <circle cx="65" cy="65" r="58" fill="none" stroke="var(--line)" stroke-width="2"/>
+                    <circle cx="65" cy="65" r="3" fill="var(--text-dim)"/>
+                    <text class="cardinal" x="65" y="18" text-anchor="middle">N</text>
+                    <text class="cardinal" x="65" y="120" text-anchor="middle">S</text>
+                    <text class="cardinal" x="118" y="69" text-anchor="middle">E</text>
+                    <text class="cardinal" x="12" y="69" text-anchor="middle">W</text>
+                    <g class="needle" id="needle">
+                        <polygon points="65,22 59,68 71,68" fill="#dc2626"/>
+                        <polygon points="65,108 59,68 71,68" fill="var(--text-dim)"/>
+                    </g>
+                </svg>
+            </div>
+            <div class="wind-read">
+                <div class="spd"><span id="wind_speed">--</span><span style="font-size:.8rem;font-weight:600"> m/s</span></div>
+                <div class="dir"><span id="wind_direction_cardinal">--</span> · <span id="wind_direction">--</span>°</div>
+                <div class="bft" id="beaufort_desc">--</div>
             </div>
         </div>
     </div>
-    <script>
-        let chartInstances = {};
-        const chartConfigs = {
-            temperature: { id: 'temperatureChart', color: 'rgba(255, 99, 132, 1)' },
-            humidity:    { id: 'humidityChart',    color: 'rgba(153, 102, 255, 1)' },
-            pressure:    { id: 'pressureChart',    color: 'rgba(75, 192, 192, 1)' },
-            pm2_5:       { id: 'pm2_5Chart',       color: 'rgba(112, 128, 144, 1)' },
-            wind_speed:  { id: 'windSpeedChart',   color: 'rgba(54, 162, 235, 1)' },
-            uv_index:    { id: 'uv_indexChart',    color: 'rgba(255, 159, 64, 1)' },
-            lux:         { id: 'luxChart',         color: 'rgba(255, 206, 86, 1)' },
-            voc_index:   { id: 'voc_indexChart',   color: 'rgba(100, 100, 100, 1)'}
-        };
 
-        const themeToggle = document.getElementById('theme-checkbox');
-        function getChartOptions(isDarkMode) {
-            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-            const ticksColor = isDarkMode ? '#bbb' : '#666';
-            return {
-                responsive: true, maintainAspectRatio: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { color: gridColor }, ticks: { color: ticksColor } },
-                    x: { grid: { color: gridColor }, ticks: { color: ticksColor } }
-                }
-            };
+    <!-- Metrics -->
+    <div class="metrics" id="metrics"></div>
+
+    <!-- Charts -->
+    <div class="section-head">
+        <h2>Historical Trends</h2>
+        <div class="ranges" id="ranges">
+            <button data-h="24">24h</button>
+            <button data-h="48">48h</button>
+            <button data-h="72" class="active">72h</button>
+            <button data-h="168">7d</button>
+            <button data-h="720">30d</button>
+        </div>
+    </div>
+    <div class="charts" id="charts"></div>
+
+    <!-- Map + forecast -->
+    <div class="geo">
+        <div class="card">
+            <div class="card-title">Regional Wind Map</div>
+            <iframe class="map-frame" loading="lazy"
+                src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=°C&metricWind=km/h&zoom=6&overlay=wind&product=ecmwf&level=surface&lat={{ station_lat }}&lon={{ station_lon }}&pressure=true"></iframe>
+        </div>
+        <div class="card">
+            <div class="card-title">Forecast</div>
+            <iframe class="fc-frame" loading="lazy"
+                src="https://embed.windy.com/embed.html?type=forecast&location=coordinates&detail=true&detailLat={{ station_lat }}&detailLon={{ station_lon }}&metricTemp=°C&metricRain=mm&metricWind=km/h"></iframe>
+        </div>
+    </div>
+
+    <div class="footer">
+        Last updated <span id="last-updated">--</span> · <span id="samples">--</span> samples today
+    </div>
+</div>
+
+<script>
+// ---- Metric card definitions ----
+const METRICS = [
+    { key: 'humidity',   name: 'Humidity',      ico: '💧', unit: '%',     dec: 0 },
+    { key: 'dew_point',  name: 'Dew Point',     ico: '🌫️', unit: '°C',    dec: 1 },
+    { key: 'pressure',   name: 'Pressure',      ico: '🧭', unit: 'hPa',   dec: 1, trend: true },
+    { key: 'uv_index',   name: 'UV Index',      ico: '🔆', unit: '',      dec: 1, cat: 'uv' },
+    { key: 'lux',        name: 'Ambient Light', ico: '☀️', unit: 'lux',   dec: 0 },
+    { key: 'voc_index',  name: 'VOC Index',     ico: '🧪', unit: '',      dec: 0 },
+    { key: 'heat_index', name: 'Heat Index',    ico: '🥵', unit: '°C',    dec: 1 },
+    { key: 'wind_speed', name: 'Wind Speed',    ico: '🍃', unit: 'm/s',   dec: 1 },
+];
+// ---- Chart definitions ----
+const CHARTS = [
+    { key: 'temperature', name: 'Temperature', color: '#ef4444', unit: '°C', dec: 1 },
+    { key: 'humidity',    name: 'Humidity',    color: '#8b5cf6', unit: '%',  dec: 0 },
+    { key: 'pressure',    name: 'Pressure',    color: '#14b8a6', unit: 'hPa',dec: 1 },
+    { key: 'pm2_5',       name: 'PM2.5',       color: '#f97316', unit: 'µg/m³', dec: 0 },
+    { key: 'wind_speed',  name: 'Wind Speed',  color: '#3b82f6', unit: 'm/s', dec: 1 },
+    { key: 'uv_index',    name: 'UV Index',    color: '#eab308', unit: '',   dec: 1 },
+    { key: 'lux',         name: 'Ambient Light', color: '#f59e0b', unit: 'lux', dec: 0 },
+    { key: 'voc_index',   name: 'VOC Index',   color: '#64748b', unit: '',   dec: 0 },
+];
+
+let charts = {};
+let rangeHours = 72;
+let latestSummary = {};
+
+// ---- Build metric cards ----
+const metricsEl = document.getElementById('metrics');
+METRICS.forEach(m => {
+    const el = document.createElement('div');
+    el.className = 'metric';
+    el.innerHTML = `
+        <div class="head"><span class="ico">${m.ico}</span><span class="name">${m.name}</span></div>
+        <div class="val"><span id="m_${m.key}">--</span><span class="u">${m.unit}</span></div>
+        <div class="foot" id="foot_${m.key}"></div>`;
+    metricsEl.appendChild(el);
+});
+
+// ---- Build chart cards ----
+const chartsEl = document.getElementById('charts');
+CHARTS.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'chart-card';
+    el.innerHTML = `<h3>${c.name}</h3><div class="cur" style="color:${c.color}" id="cur_${c.key}">--</div>
+        <div class="chart-box"><canvas id="chart_${c.key}"></canvas></div>`;
+    chartsEl.appendChild(el);
+});
+
+// ---- Helpers ----
+function fmt(v, dec) { return (v === null || v === undefined || isNaN(v)) ? '--' : Number(v).toFixed(dec); }
+function setText(id, txt) { const el = document.getElementById(id); if (el) el.innerText = txt; }
+
+// ---- Theme ----
+const themeBtn = document.getElementById('theme-btn');
+function applyTheme(dark) {
+    document.body.classList.toggle('dark', dark);
+    themeBtn.innerText = dark ? '☀️' : '🌙';
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+    Object.values(charts).forEach(ch => { styleChart(ch); ch.update('none'); });
+}
+themeBtn.onclick = () => applyTheme(!document.body.classList.contains('dark'));
+const savedTheme = localStorage.getItem('theme');
+applyTheme(savedTheme ? savedTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+// ---- Clock ----
+function tickClock() {
+    setText('clock', new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ---- Weather condition icon ----
+function condIcon(d) {
+    if (d.uv_index >= 6) return '☀️';
+    if (d.pressure !== null && d.pressure < 1005 && d.humidity > 80) return '🌧️';
+    if (d.humidity > 88) return '🌫️';
+    if (d.wind_speed >= 8) return '💨';
+    if (d.lux !== null && d.lux < 50) return '🌙';
+    if (d.uv_index >= 3) return '🌤️';
+    return '⛅';
+}
+
+// ---- Connection status ----
+function setStatus(state, text) {
+    const el = document.getElementById('status');
+    el.className = 'status-pill ' + state;
+    setText('status-text', text);
+}
+
+// ---- Update live data ----
+async function fetchData() {
+    try {
+        const res = await fetch('/data');
+        if (!res.ok) throw new Error(res.status);
+        const d = await res.json();
+        if (d.error) throw new Error(d.error);
+
+        // Connection state from freshness
+        if (d.is_stale) {
+            const mins = Math.floor(d.age_seconds / 60);
+            setStatus('stale', `Stale · ${mins > 0 ? mins + 'm' : d.age_seconds + 's'} old`);
+        } else {
+            setStatus('live', 'Live');
         }
-        function setTheme(isDarkMode) {
-            document.body.classList.toggle('dark-mode', isDarkMode);
-            themeToggle.checked = isDarkMode;
-            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-            const newOptions = getChartOptions(isDarkMode);
-            for (const chartId in chartInstances) {
-                chartInstances[chartId].options = newOptions;
-                chartInstances[chartId].update('none');
+
+        // Hero
+        setText('temperature', fmt(d.temperature, 1));
+        setText('feels_like', fmt(d.feels_like, 1));
+        setText('dew_point', fmt(d.dew_point, 1));
+        setText('weather_outlook', d.weather_outlook || '—');
+        document.getElementById('cond-icon').innerText = condIcon(d);
+
+        // AQI
+        setText('aqi', d.aqi ?? '--');
+        setText('aqi_category', d.aqi_category || 'Unknown');
+        setText('aqi_dominant', d.aqi_dominant || '--');
+        document.getElementById('aqi-badge').style.background = d.aqi_color || '#94a3b8';
+        setText('pm1_0', fmt(d.pm1_0, 0));
+        setText('pm2_5', fmt(d.pm2_5, 0));
+        setText('pm10_0', fmt(d.pm10_0, 0));
+
+        // Wind compass
+        setText('wind_speed', fmt(d.wind_speed, 1));
+        setText('wind_direction', fmt(d.wind_direction, 0));
+        setText('wind_direction_cardinal', d.wind_direction_cardinal || '--');
+        setText('beaufort_desc', d.beaufort_desc || '--');
+        if (d.wind_direction !== null && d.wind_direction !== undefined)
+            document.getElementById('needle').style.transform = `rotate(${d.wind_direction}deg)`;
+
+        // Metric cards
+        METRICS.forEach(m => {
+            setText('m_' + m.key, fmt(d[m.key], m.dec));
+            const foot = document.getElementById('foot_' + m.key);
+            let html = '';
+            if (m.cat === 'uv' && d.uv_category)
+                html += `<span class="chip" style="background:${d.uv_color}">${d.uv_category}</span>`;
+            if (m.trend && d.pressure_trend) {
+                const arrow = d.pressure_trend === 'rising' ? '↑' : d.pressure_trend === 'falling' ? '↓' : '→';
+                html += `<span class="trend ${d.pressure_trend}">${arrow} ${d.pressure_trend} ${d.pressure_trend_delta > 0 ? '+' : ''}${fmt(d.pressure_trend_delta,1)}</span>`;
             }
-        }
-        themeToggle.addEventListener('change', () => setTheme(themeToggle.checked));
-        const savedTheme = localStorage.getItem('theme');
-        const osPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setTheme(savedTheme === 'dark' || (savedTheme === null && osPrefersDark));
+            const s = latestSummary[m.key];
+            if (s && s.max !== null) html += `<span class="hilo"><span class="up">${fmt(s.max,m.dec)}</span> / <span class="dn">${fmt(s.min,m.dec)}</span></span>`;
+            foot.innerHTML = html;
+        });
 
-        function createOrUpdateChart(dataType, history) {
-            const config = chartConfigs[dataType];
-            if (!config || !document.getElementById(config.id) || !history || !history.timestamps || !history.values || history.values.length === 0) return;
-            const ctx = document.getElementById(config.id).getContext('2d');
-            const labels = history.timestamps.map(ts => new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-            if (chartInstances[config.id]) {
-                chartInstances[config.id].data.labels = labels;
-                chartInstances[config.id].data.datasets[0].data = history.values;
-                chartInstances[config.id].update('none');
-            } else {
-                chartInstances[config.id] = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: dataType.replace(/_/g, ' '),
-                            data: history.values,
-                            borderColor: config.color,
-                            backgroundColor: config.color.replace('1)', '0.2)'),
-                            borderWidth: 2, tension: 0.2, pointRadius: 0, fill: true
-                        }]
-                    },
-                    options: getChartOptions(document.body.classList.contains('dark-mode'))
-                });
-            }
-        }
+        // Alerts
+        renderAlerts(d.alerts || []);
 
-        function updateDisplay(data) {
-            if (!data || !data.timestamp) return;
-            for (const key in data) {
-                const el = document.getElementById(key);
-                if (el) {
-                    if (key === 'weather_outlook' || key === 'wind_direction_cardinal') {
-                        el.innerText = data[key] || '--';
-                    } else if (typeof data[key] === 'number') {
-                        let decimals = (key === 'pressure' || key === 'lux' || key === 'voc_index' || key.startsWith('pm')) ? 0 : 1;
-                        el.innerText = data[key].toFixed(decimals);
-                    } else {
-                        el.innerText = '--';
-                    }
-                }
-            }
-            document.getElementById('timestamp').innerText = new Date(data.timestamp * 1000).toLocaleString();
-        }
+        // Footer
+        if (d.timestamp) setText('last-updated', new Date(d.timestamp * 1000).toLocaleString());
+    } catch (e) {
+        setStatus('offline', 'Offline');
+    }
+}
 
-        async function fetchAllData() {
-            try {
-                const dataRes = await fetch('/data');
-                if (!dataRes.ok) throw new Error(`API fetch failed: ${dataRes.status}`);
-                const latestData = await dataRes.json();
-                if(latestData && !latestData.error) {
-                    updateDisplay(latestData);
-                }
-                for (const dataType in chartConfigs) {
-                    const historyRes = await fetch(`/history/${dataType}`);
-                    if (historyRes.ok) {
-                        const historyData = await historyRes.json();
-                        createOrUpdateChart(dataType, historyData);
-                    }
-                }
-            } catch (error) { console.error('Error fetching data:', error); }
-        }
+function renderAlerts(alerts) {
+    const box = document.getElementById('alerts');
+    if (!alerts.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    box.style.display = 'flex';
+    box.innerHTML = alerts.map(a =>
+        `<div class="alert ${a.level}"><span class="ico">${a.level === 'danger' ? '⛔' : '⚠️'}</span>
+         <span><b>${a.level.toUpperCase()}</b> — ${a.message}</span></div>`).join('');
+}
 
-        fetchAllData();
-        setInterval(fetchAllData, 5000);
-    </script>
+// ---- Summary (today's hi/lo) ----
+async function fetchSummary() {
+    try {
+        const res = await fetch('/summary');
+        if (!res.ok) return;
+        const s = await res.json();
+        latestSummary = s;
+        setText('samples', (s.samples ?? 0).toLocaleString());
+        if (s.temperature) {
+            setText('temp-hi', fmt(s.temperature.max, 0));
+            setText('temp-lo', fmt(s.temperature.min, 0));
+            setText('temp-avg', fmt(s.temperature.avg, 0));
+        }
+    } catch (e) { /* ignore */ }
+}
+
+// ---- Charts ----
+function styleChart(ch) {
+    const dark = document.body.classList.contains('dark');
+    const grid = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
+    const ticks = dark ? '#8ba0bd' : '#94a3b8';
+    ch.options.scales.x.grid.color = grid;
+    ch.options.scales.y.grid.color = grid;
+    ch.options.scales.x.ticks.color = ticks;
+    ch.options.scales.y.ticks.color = ticks;
+}
+
+function chartOptions() {
+    const dark = document.body.classList.contains('dark');
+    const grid = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
+    const ticks = dark ? '#8ba0bd' : '#94a3b8';
+    return {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { display: false }, tooltip: { displayColors: false } },
+        scales: {
+            x: { grid: { color: grid }, ticks: { color: ticks, maxTicksLimit: 6, maxRotation: 0 } },
+            y: { grid: { color: grid }, ticks: { color: ticks, maxTicksLimit: 5 } }
+        }
+    };
+}
+
+async function fetchHistory() {
+    const points = rangeHours >= 168 ? 400 : 300;
+    await Promise.all(CHARTS.map(async c => {
+        try {
+            const res = await fetch(`/history/${c.key}?hours=${rangeHours}&points=${points}`);
+            if (!res.ok) return;
+            const h = await res.json();
+            renderChart(c, h);
+        } catch (e) { /* ignore */ }
+    }));
+}
+
+function renderChart(c, h) {
+    const canvas = document.getElementById('chart_' + c.key);
+    if (!canvas || !h.timestamps) return;
+    const showTime = rangeHours <= 48;
+    const labels = h.timestamps.map(ts => {
+        const dt = new Date(ts * 1000);
+        return showTime ? dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    });
+    // current value label
+    const last = h.values.length ? h.values[h.values.length - 1] : null;
+    setText('cur_' + c.key, last === null ? '--' : Number(last).toFixed(c.dec) + (c.unit ? ' ' + c.unit : ''));
+
+    if (charts[c.key]) {
+        const ch = charts[c.key];
+        ch.data.labels = labels;
+        ch.data.datasets[0].data = h.max;
+        ch.data.datasets[1].data = h.min;
+        ch.data.datasets[2].data = h.values;
+        ch.update('none');
+        return;
+    }
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 150);
+    grad.addColorStop(0, c.color + '55');
+    grad.addColorStop(1, c.color + '05');
+    charts[c.key] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                { data: h.max, borderColor: 'transparent', backgroundColor: c.color + '18', pointRadius: 0, fill: '+1', tension: .3 },
+                { data: h.min, borderColor: 'transparent', backgroundColor: 'transparent', pointRadius: 0, fill: false, tension: .3 },
+                { data: h.values, borderColor: c.color, backgroundColor: grad, borderWidth: 2, pointRadius: 0, fill: true, tension: .3 }
+            ]
+        },
+        options: chartOptions()
+    });
+}
+
+// ---- Range selector ----
+document.getElementById('ranges').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    document.querySelectorAll('.ranges button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    rangeHours = parseInt(btn.dataset.h, 10);
+    fetchHistory();
+});
+
+// ---- Boot ----
+async function boot() {
+    await fetchSummary();
+    await fetchData();
+    await fetchHistory();
+}
+boot();
+setInterval(fetchData, 5000);
+setInterval(fetchSummary, 60000);
+setInterval(fetchHistory, 60000);
+</script>
 </body>
 </html>

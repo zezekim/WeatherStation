@@ -3,7 +3,7 @@ import paho.mqtt.client as mqtt
 from pymodbus.client import ModbusSerialClient
 from pymodbus.exceptions import ModbusIOException
 
-from config import MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASS
+from config import MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASS, require_mqtt
 
 # --- Configuration ---
 MQTT_TOPIC_PREFIX = "pi_hub"
@@ -70,6 +70,7 @@ def read_and_publish(mqtt_client, modbus_client, sensor_config):
         modbus_client.close()
 
 def main():
+    require_mqtt()
     mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     mqtt_client.username_pw_set(MQTT_USER, MQTT_PASS)
     mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
