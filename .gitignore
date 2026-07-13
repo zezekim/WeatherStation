@@ -1,5 +1,9 @@
 # Secrets — never commit
 .env
+# shell history — contains a typed password
+history.txt
+# weather.tar archives of the project dir
+*.tar
 
 # Old iterations and hardware test scripts (contain credentials/API keys)
 backup/

@@ -1,0 +1,15 @@
+[Unit]
+Description=Modbus Sensor Hub (wind speed/direction)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=rs
+Group=rs
+WorkingDirectory=/home/rs/weather
+ExecStart=/home/rs/weather/venv/bin/python3 /home/rs/weather/modbus_hub.py
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=Weather Station Service
+After=network.target
+
+[Service]
+User=rs
+Group=rs
+WorkingDirectory=/home/rs/weather
+ExecStart=/home/rs/weather/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 w:app
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

@@ -113,6 +113,32 @@ Nightly example:
 
 Rollup is idempotent (only hours with >1 row are touched) and transactional. On a 386-day, 1.29 M-row test database it reduced the file from ~99 MB to ~4 MB.
 
+## Deploying to the Raspberry Pi
+
+The station runs as four **systemd** services (unit files in `systemd/`), all as
+user `rs` from `/home/rs/weather` with the project virtualenv:
+
+| Service | Runs |
+|---|---|
+| `modbus_hub.service` | `modbus_hub.py` — wind sensors |
+| `pm25_hub.service`   | `pm25_hub.py` — particulate sensor |
+| `mqtt_logger.service`| `mqtt_logger.py` — MQTT → SQLite + alerts |
+| `weather.service`    | `gunicorn w:app` — dashboard on `:5000` |
+
+`deploy.sh` decommissions the old version and installs the current one. Run it
+**as `rs` (not root)** — it uses `sudo` internally:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zezekim/WeatherStation/main/deploy.sh -o /tmp/deploy.sh
+bash /tmp/deploy.sh        # after the first run it lives at /home/rs/weather/deploy.sh
+```
+
+It stops/disables the old services, updates the code from GitHub (a `git reset
+--hard` that **preserves `weather_data.db`, `.env`, and `venv/`** — they're
+gitignored), syncs dependencies, installs the unit files, and starts everything.
+If `.env` isn't configured yet it enables the services but leaves them stopped
+and tells you to edit `.env` first. Safe to re-run.
+
 ## Database
 
 Single SQLite table `weather_readings` (see `schema.sql`): one row per snapshot with a Unix `timestamp` and one nullable column per raw metric, indexed on `timestamp`.

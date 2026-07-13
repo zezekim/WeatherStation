@@ -13,6 +13,7 @@ A Raspberry Pi weather/air-quality station. Sensor hub scripts publish readings 
 - `alerts.py` — `evaluate_alerts(reading)` → active alerts from `config.ALERT_THRESHOLDS`. Pure; used by `w.py` (dashboard) and the logger (MQTT publish).
 - `w.py` — Flask app + API: `/data`, `/history/<metric>`, `/summary`.
 - `rollup.py` — retention job (see below).
+- `systemd/*.service` + `deploy.sh` — deployment. The station runs as four systemd services (`modbus_hub`, `pm25_hub`, `mqtt_logger`, `weather`) as user `rs` from `/home/rs/weather`. `deploy.sh` (run as `rs`, uses sudo internally) stops the old services, does a `git reset --hard` that preserves the gitignored DB/`.env`/`venv`, syncs deps, installs the units, and restarts. Adding/renaming a service means updating both `systemd/` and the `SERVICES` array in `deploy.sh`. Note `pm25_hub.service` still declares `Requires=pigpiod.service` from an earlier pigpio-based implementation, though `pm25_hub.py` now uses pyserial.
 
 ## Architecture and data flow
 

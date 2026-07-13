@@ -1,0 +1,6 @@
+flask
+gunicorn
+paho-mqtt
+pymodbus
+pyserial
+adafruit-circuitpython-pm25
