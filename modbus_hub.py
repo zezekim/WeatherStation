@@ -1,3 +1,4 @@
+import inspect
 import time
 import paho.mqtt.client as mqtt
 from pymodbus.client import ModbusSerialClient
@@ -7,6 +8,36 @@ from config import MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASS, require_mqtt
 
 # --- Configuration ---
 MQTT_TOPIC_PREFIX = "pi_hub"
+MODBUS_SLAVE_ID = 1
+
+
+def _slave_kwarg():
+    """Detect the keyword pymodbus uses for the Modbus slave/unit id.
+
+    It has been renamed across releases (unit -> slave -> device_id), so we
+    inspect the installed signature instead of hard-coding one name. Returns
+    None if none match, in which case we omit it and rely on the library's
+    default of 1 (which matches MODBUS_SLAVE_ID)."""
+    try:
+        params = inspect.signature(ModbusSerialClient.read_holding_registers).parameters
+    except (ValueError, TypeError):
+        return "slave"
+    for name in ("slave", "device_id", "slave_id", "unit"):
+        if name in params:
+            return name
+    return None
+
+
+SLAVE_KWARG = _slave_kwarg()
+
+
+def read_holding_register(modbus_client, address):
+    """Read one holding register, passing the slave id under whatever keyword
+    this pymodbus version expects."""
+    kwargs = {"count": 1}
+    if SLAVE_KWARG:
+        kwargs[SLAVE_KWARG] = MODBUS_SLAVE_ID
+    return modbus_client.read_holding_registers(address, **kwargs)
 
 # Define sensors as a list of dictionaries for easier management
 SENSORS = [
@@ -46,9 +77,7 @@ def read_and_publish(mqtt_client, modbus_client, sensor_config):
             return
 
         # Attempt to read the register
-        result = modbus_client.read_holding_registers(
-            address=sensor_config['address'], count=1, slave=1
-        )
+        result = read_holding_register(modbus_client, sensor_config['address'])
 
         if result.isError():
             # This handles Modbus-level errors (e.g., bad CRC, slave not responding)
