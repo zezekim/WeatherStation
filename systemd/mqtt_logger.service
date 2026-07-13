@@ -6,6 +6,7 @@ After=network-online.target
 [Service]
 User=rs
 Group=rs
+Environment=PYTHONUNBUFFERED=1
 WorkingDirectory=/home/rs/weather
 ExecStart=/home/rs/weather/venv/bin/python3 /home/rs/weather/mqtt_logger.py
 Restart=always

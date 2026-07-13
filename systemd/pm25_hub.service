@@ -8,6 +8,7 @@ Requires=pigpiod.service
 [Service]
 User=rs
 Group=rs
+Environment=PYTHONUNBUFFERED=1
 WorkingDirectory=/home/rs/weather
 ExecStart=/home/rs/weather/venv/bin/python3 /home/rs/weather/pm25_hub.py
 Restart=always
