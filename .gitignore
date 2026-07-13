@@ -1,0 +1,14 @@
+# Database (large, contains logged data)
+*.db
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Editor/OS
+.DS_Store
+*~
+
+# Local Claude Code settings
+.claude/settings.local.json
