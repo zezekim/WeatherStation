@@ -49,9 +49,12 @@ pip install flask paho-mqtt pymodbus pyserial adafruit-circuitpython-pm25 gunico
 
 # Create the database (WARNING: drops any existing weather_readings table)
 python init_db.py
+
+# Configure MQTT broker address and credentials
+cp .env.example .env   # then edit .env
 ```
 
-Configure the MQTT broker address and credentials at the top of `modbus_hub.py`, `pm25_hub.py`, and `mqtt_logger.py`.
+All scripts read MQTT settings from `.env` (via `config.py`, no extra dependency). Real environment variables take precedence over `.env` values. Never commit `.env`.
 
 ## Running
 

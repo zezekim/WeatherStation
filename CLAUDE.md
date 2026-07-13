@@ -22,8 +22,8 @@ Sensors → MQTT → SQLite → Flask, with each stage a separate long-running p
 - **Topic mapping**: ESPHome sanitizes sensor names (e.g. `particulate_matter_2_5__m`). Any new sensor must be added to `TOPIC_MAP` in `mqtt_logger.py`; the key is the second-to-last topic segment for `/state` topics, otherwise the last segment.
 - **Schema changes**: adding a metric requires touching `schema.sql`, the INSERT statement and defaults list in `mqtt_logger.py`, and the `valid_types` whitelist in `w.py`. `init_db.py` **drops and recreates** the table — never run it against a database with data worth keeping.
 - **Timestamps** are Unix epoch seconds (integers) throughout.
-- **Config is hardcoded** at the top of each script (broker IP, credentials, serial ports, intervals). Serial devices use stable udev aliases like `/dev/wind_speed`. Do not commit real MQTT credentials — the scripts currently hold them inline, which is why the source is not pushed to the public repo.
-- `backup/` contains one-off hardware test scripts and older iterations — reference only, not part of the running system.
+- **Config**: MQTT broker/credentials live in `.env`, loaded by `config.py` (stdlib parser, no python-dotenv — the Pi venv can't be assumed to have it). `.env` is gitignored; `.env.example` documents the keys. Everything else (serial ports, intervals, topic prefix) is hardcoded at the top of each script. Serial devices use stable udev aliases like `/dev/wind_speed`.
+- `backup/` contains one-off hardware test scripts and older iterations — reference only, not part of the running system, and gitignored because some still contain old credentials/API keys.
 - `weather_data.db` (~100 MB) and `venv/` must never be committed.
 
 ## Running / checking
